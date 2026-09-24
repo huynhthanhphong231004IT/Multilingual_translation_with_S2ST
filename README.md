@@ -43,5 +43,9 @@ Youtobe: https://www.youtube.com/@ReoRioll-2304CICTCTU <br>
 </p>
 
 ```python
+!git clone https://github.com/https://github.com/huynhthanhphong231004IT/Water_leak_detection_using_Instance_Segmentation_with_YOLO.git
+```
+
+```python
 pip install -r requirements.txt && python download_models.py
 ```
