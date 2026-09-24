@@ -31,7 +31,7 @@ Youtobe: https://www.youtube.com/@ReoRioll-2304CICTCTU <br>
 <br>
 
 <p align="center">
-  <img src="Images/AnhGiaoDien.png" width="600">
+  <img src="Images/AnhGiaoDien.png" width="800">
   <br>
   <i>Ảnh giao diện hệ thống dịch thuật đa ngôn ngữ</i>
 </p>
