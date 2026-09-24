@@ -43,7 +43,7 @@ Youtobe: https://www.youtube.com/@ReoRioll-2304CICTCTU <br>
 </p>
 
 ```python
-!git clone https://github.com/https://github.com/huynhthanhphong231004IT/Water_leak_detection_using_Instance_Segmentation_with_YOLO.git
+!git clone https://github.com/huynhthanhphong231004IT/Multilingual_translation_with_S2ST.git
 ```
 
 ```python
