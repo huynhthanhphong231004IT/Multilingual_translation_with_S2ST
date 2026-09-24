@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Dịch Cabin Real-Time</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #090d16;
+            --card-bg: rgba(18, 26, 43, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.25);
+            --accent: #6366f1;
+            --danger: #f43f5e;
+            --danger-glow: rgba(244, 63, 94, 0.3);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.25);
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+            --text-sub: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body { 
+            background: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #090d16 80%);
+            color: var(--text-main); 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 24px 16px;
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border); 
+            width: 100%; 
+            max-width: 820px; 
+            padding: 36px; 
+            border-radius: 24px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6),
+                        0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), var(--accent), transparent);
+        }
+
+        .header { text-align: center; margin-bottom: 28px; }
+        .header h2 { 
+            font-size: 28px; 
+            font-weight: 800; 
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 30%, #a5f3fc 70%, #38bdf8 100%); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            margin-bottom: 8px;
+        }
+
+        .status-badge { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 10px; 
+            padding: 6px 16px; 
+            border-radius: 9999px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            background: rgba(15, 23, 42, 0.6); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            color: var(--text-sub);
+            transition: all 0.3s ease;
+        }
+        .status-dot { 
+            width: 8px; height: 8px; 
+            border-radius: 50%; 
+            background: var(--text-muted); 
+            transition: all 0.3s ease;
+        }
+        .status-badge.recording {
+            border-color: rgba(244, 63, 94, 0.4);
+            background: rgba(244, 63, 94, 0.1);
+            color: #fda4af;
+        }
+        .status-badge.recording .status-dot { 
+            background: var(--danger); 
+            box-shadow: 0 0 12px var(--danger); 
+            animation: pulse 1.5s infinite; 
+        }
+        .status-badge.file-stream {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.1);
+            color: #6ee7b7;
+        }
+        .status-badge.file-stream .status-dot { 
+            background: var(--success); 
+            box-shadow: 0 0 12px var(--success); 
+            animation: pulse 1.5s infinite; 
+        }
+
+        .control-panel { 
+            display: flex; gap: 12px; 
+            align-items: center; justify-content: center; 
+            margin-bottom: 24px; flex-wrap: wrap; 
+        }
+        
+        .select-group { 
+            display: flex; align-items: center; gap: 10px; 
+            background: rgba(15, 23, 42, 0.8); 
+            padding: 8px 16px; border-radius: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            transition: border-color 0.2s;
+        }
+        .select-group:focus-within { border-color: var(--primary); }
+        .select-group label { 
+            font-size: 12px; color: var(--text-muted); 
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        select { 
+            background: transparent; border: none; 
+            color: var(--text-main); font-size: 14px; 
+            font-weight: 600; outline: none; cursor: pointer; 
+        }
+        select option { background: #0f172a; color: var(--text-main); }
+        select optgroup { font-weight: 700; color: var(--primary); background: #090d16; }
+
+        .btn-record { 
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); 
+            color: white; border: none; padding: 10px 24px; 
+            font-size: 14px; font-weight: 700; border-radius: 12px; 
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: flex; align-items: center; gap: 8px; 
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        }
+        .btn-record:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5); }
+        .btn-record.active { 
+            background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%); 
+            box-shadow: 0 4px 14px var(--danger-glow);
+        }
+
+        .upload-section { 
+            background: rgba(15, 23, 42, 0.4); 
+            border: 2px dashed rgba(255, 255, 255, 0.12); 
+            border-radius: 16px; padding: 20px; 
+            text-align: center; margin-bottom: 24px; 
+            transition: all 0.3s ease; position: relative; 
+        }
+        .upload-section:hover { border-color: var(--primary); background: rgba(56, 189, 248, 0.03); }
+        .upload-label { cursor: pointer; display: block; width: 100%; height: 100%; }
+        .upload-section p { font-size: 14px; color: var(--text-sub); font-weight: 500; }
+        .upload-section span { color: var(--primary); font-weight: 700; border-bottom: 1.5px solid var(--primary); padding-bottom: 2px; }
+
+        .file-controls { display: none; flex-direction: column; gap: 12px; align-items: center; }
+        .file-info { 
+            font-size: 14px; color: var(--success); font-weight: 600; 
+            text-overflow: ellipsis; overflow: hidden; white-space: nowrap; 
+            max-width: 90%; font-family: 'JetBrains Mono', monospace;
+        }
+        .vol-control { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-sub); font-weight: 500; }
+        .vol-control input[type=range] { accent-color: var(--primary); cursor: pointer; }
+        .btn-stop-file { 
+            background: rgba(244, 63, 94, 0.15); color: #fda4af; 
+            border: 1px solid rgba(244, 63, 94, 0.3); padding: 8px 18px; 
+            border-radius: 10px; font-size: 13px; font-weight: 600; 
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-stop-file:hover { background: var(--danger); color: white; }
+
+        .grid-visualizers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .viz-box { 
+            background: rgba(15, 23, 42, 0.7); border-radius: 16px; 
+            padding: 16px; border: 1px solid rgba(255, 255, 255, 0.05); 
+            position: relative;
+        }
+        .viz-title { 
+            font-size: 11px; font-weight: 800; text-transform: uppercase; 
+            letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 12px; 
+            display: flex; align-items: center; gap: 6px;
+        }
+        .visualizer-container { width: 100%; height: 64px; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .box-result { 
+            background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: 16px; padding: 20px; min-height: 140px; max-height: 260px; 
+            overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;
+        }
+        .res-title { 
+            font-size: 11px; font-weight: 800; text-transform: uppercase; 
+            letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 12px; 
+        }
+        .res-card {
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid var(--primary);
+            padding: 10px 14px; border-radius: 0 10px 10px 0;
+            margin-bottom: 12px; animation: fadeIn 0.3s ease;
+        }
+        .res-text { 
+            font-size: 16px; font-weight: 700; color: var(--primary); 
+            word-break: break-word; margin-bottom: 4px; line-height: 1.4;
+        }
+        .res-sub { font-size: 13px; color: var(--text-sub); font-weight: 500; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 640px) {
+            .grid-visualizers { grid-template-columns: 1fr; }
+            .card { padding: 20px; }
+            .control-panel { flex-direction: column; width: 100%; }
+            .select-group { width: 100%; justify-content: space-between; }
+            .btn-record { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <h2>Hệ Thống Dịch Cabin Real-Time</h2>
+        <div id="statusBadge" class="status-badge">
+            <div class="status-dot"></div>
+            <span id="statusText">Trạng thái: Sẵn sàng</span>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="select-group">
+            <label>Nói (Nguồn)</label>
+            <select id="srcLang">
+                <optgroup label="Châu Á">
+                    <option value="vi" selected>Tiếng Việt (vi)</option>
+                    <option value="en">Tiếng Anh (en)</option>
+                    <option value="zh">Tiếng Trung (zh)</option>
+                    <option value="ja">Tiếng Nhật (ja)</option>
+                    <option value="ko">Tiếng Hàn (ko)</option>
+                    <option value="th">Tiếng Thái (th)</option>
+                    <option value="id">Tiếng Indonesia (id)</option>
+                    <option value="hi">Tiếng Ấn Độ (hi)</option>
+                </optgroup>
+                <optgroup label="Châu Âu">
+                    <option value="fr">Tiếng Pháp (fr)</option>
+                    <option value="de">Tiếng Đức (de)</option>
+                    <option value="es">Tiếng Tây Ban Nha (es)</option>
+                    <option value="it">Tiếng Ý (it)</option>
+                    <option value="ru">Tiếng Nga (ru)</option>
+                    <option value="pt">Tiếng Bồ Đào Nha (pt)</option>
+                </optgroup>
+                <optgroup label="Trung Đông">
+                    <option value="ar">Tiếng Ả Rập (ar)</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="select-group">
+            <label>Dịch sang (Đích)</label>
+            <select id="targetLang">
+                <optgroup label="Châu Á">
+                    <option value="vi">Tiếng Việt (vi)</option>
+                    <option value="en" selected>Tiếng Anh (en)</option>
+                    <option value="zh">Tiếng Trung (zh)</option>
+                    <option value="ja">Tiếng Nhật (ja)</option>
+                    <option value="ko">Tiếng Hàn (ko)</option>
+                    <option value="th">Tiếng Thái (th)</option>
+                    <option value="id">Tiếng Indonesia (id)</option>
+                    <option value="hi">Tiếng Ấn Độ (hi)</option>
+                </optgroup>
+                <optgroup label="Châu Âu">
+                    <option value="fr">Tiếng Pháp (fr)</option>
+                    <option value="de">Tiếng Đức (de)</option>
+                    <option value="es">Tiếng Tây Ban Nha (es)</option>
+                    <option value="it">Tiếng Ý (it)</option>
+                    <option value="ru">Tiếng Nga (ru)</option>
+                    <option value="pt">Tiếng Bồ Đào Nha (pt)</option>
+                </optgroup>
+                <optgroup label="Trung Đông">
+                    <option value="ar">Tiếng Ả Rập (ar)</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <button id="btnRecord" class="btn-record">
+            <span id="btnText">Bắt đầu Thu Âm</span>
+        </button>
+    </div>
+
+    <div class="upload-section" id="dropZone">
+        <label for="fileInput" class="upload-label" id="uploadLabel">
+            <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+            <p>Phát file âm thanh real-time: Kéo thả vào đây hoặc <span>bấm để chọn file</span></p>
+        </label>
+        
+        <div class="file-controls" id="fileControls">
+            <span class="file-info" id="fileName">Đang phát</span>
+            <div class="vol-control">
+                <label>Âm lượng tiếng gốc:</label>
+                <input type="range" id="origVolume" min="0" max="1" step="0.1" value="0.2">
+            </div>
+            <button class="btn-stop-file" id="btnStopFile">Dừng Phát File</button>
+        </div>
+    </div>
+
+    <div class="grid-visualizers">
+        <div class="viz-box">
+            <div class="viz-title"><span style="color: #ef4444;">●</span> Sóng Âm Thanh NÓI / FILE</div>
+            <div class="visualizer-container"><canvas id="vizInput"></canvas></div>
+        </div>
+        <div class="viz-box">
+            <div class="viz-title"><span style="color: #38bdf8;">●</span> Sóng Âm Thanh PHÁT (Dịch)</div>
+            <div class="visualizer-container"><canvas id="vizOutput"></canvas></div>
+        </div>
+    </div>
+
+    <div class="box-result" id="resultContainer">
+        <div class="res-title">Kết quả dịch cabin</div>
+        <div id="transcriptHistory"></div>
+    </div>
+</div>
+
+<script>
+let ws = null;
+let micAudioCtx = null, fileAudioCtx = null;
+const playAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+
+let mediaStream = null, processor = null, fileSourceNode = null, gainNode = null;
+let inputAnalyser = null, outputAnalyser = null, animId = null;
+let isRecording = false, isFileStreaming = false;
+let audioQueue = [], isPlaying = false;
+let silenceCounter = 0; 
+
+const btnRecord = document.getElementById('btnRecord'), btnText = document.getElementById('btnText');
+const srcLang = document.getElementById('srcLang'), targetLang = document.getElementById('targetLang');
+const statusBadge = document.getElementById('statusBadge'), statusText = document.getElementById('statusText');
+const canvasInput = document.getElementById('vizInput'), ctxInput = canvasInput.getContext('2d');
+const canvasOutput = document.getElementById('vizOutput'), ctxOutput = canvasOutput.getContext('2d');
+
+const fileInput = document.getElementById('fileInput');
+const uploadLabel = document.getElementById('uploadLabel');
+const fileControls = document.getElementById('fileControls');
+const fileName = document.getElementById('fileName');
+const btnStopFile = document.getElementById('btnStopFile');
+const origVolume = document.getElementById('origVolume');
+const transcriptHistory = document.getElementById('transcriptHistory');
+const resultContainer = document.getElementById('resultContainer');
+
+function resizeCanvases() {
+    canvasInput.width = canvasInput.parentElement.clientWidth;
+    canvasInput.height = canvasInput.parentElement.clientHeight;
+    canvasOutput.width = canvasOutput.parentElement.clientWidth;
+    canvasOutput.height = canvasOutput.parentElement.clientHeight;
+}
+window.addEventListener('resize', resizeCanvases);
+resizeCanvases();
+
+drawBars(ctxInput, canvasInput, new Uint8Array(0), '#ef4444', '#f87171');
+drawBars(ctxOutput, canvasOutput, new Uint8Array(0), '#38bdf8', '#818cf8');
+
+function sendConfig() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "config", src_lang: srcLang.value, target_lang: targetLang.value }));
+    }
+}
+srcLang.addEventListener('change', sendConfig);
+targetLang.addEventListener('change', sendConfig);
+
+btnRecord.addEventListener('click', async () => {
+    if (isFileStreaming) stopFileStream(true);
+    if (!isRecording) await startRecording();
+    else stopRecording();
+});
+
+btnStopFile.addEventListener('click', () => stopFileStream(true));
+
+origVolume.addEventListener('input', (e) => {
+    if (gainNode) gainNode.gain.value = parseFloat(e.target.value);
+});
+
+function sendSilenceBuffer(durationMs = 1500) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    const sampleRate = 16000;
+    const silenceSamples = Math.floor(sampleRate * (durationMs / 1000));
+    const silenceBuffer = new Int16Array(silenceSamples); // Mảng PCM toàn số 0
+    ws.send(silenceBuffer.buffer);
+}
+
+function appendResult(original, translation, src, tgt) {
+    const pCard = document.getElementById('partialCard');
+    if (pCard) pCard.remove();
+
+    if (!original && !translation) return;
+
+    const div = document.createElement('div');
+    div.className = 'res-card';
+    div.innerHTML = `
+        <div class="res-sub">Gốc (${src}): ${original}</div>
+        <div class="res-text">Dịch (${tgt}): ${translation}</div>
+    `;
+    transcriptHistory.appendChild(div);
+    resultContainer.scrollTop = resultContainer.scrollHeight;
+
+    while (transcriptHistory.children.length > 50) {
+        transcriptHistory.removeChild(transcriptHistory.firstChild);
+    }
+}
+
+function enqueueAudio(b64) {
+    if (!b64) return;
+    
+    audioQueue.push(b64);
+    
+    if (!isPlaying) {
+        processAudioQueue();
+    }
+}
+
+function processAudioQueue() {
+    if (audioQueue.length === 0) { 
+        isPlaying = false; 
+        return; 
+    }
+    isPlaying = true;
+
+    if (playAudioCtx.state === 'suspended') playAudioCtx.resume();
+
+    const b64 = audioQueue.shift(); 
+
+    try {
+        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        playAudioCtx.decodeAudioData(bytes.buffer, (buffer) => {
+            const source = playAudioCtx.createBufferSource();
+            source.buffer = buffer;
+
+            if (audioQueue.length >= 3) {
+                source.playbackRate.value = 1.35;
+            } else if (audioQueue.length >= 1) {
+                source.playbackRate.value = 1.15;
+            } else {
+                source.playbackRate.value = 1.0;
+            }
+
+            if (!outputAnalyser) {
+                outputAnalyser = playAudioCtx.createAnalyser();
+                outputAnalyser.fftSize = 64;
+                outputAnalyser.connect(playAudioCtx.destination);
+            }
+
+            source.connect(outputAnalyser);
+            
+            source.onended = () => {
+                source.disconnect();
+                processAudioQueue();
+            };
+            
+            source.start(0);
+            if (!animId) renderVisualizers();
+        }, (err) => {
+            console.error("Lỗi Decode Audio:", err);
+            processAudioQueue();
+        });
+    } catch (e) {
+        console.error("Lỗi Audio Queue:", e);
+        processAudioQueue();
+    }
+}
+
+async function startRecording() {
+    try {
+        transcriptHistory.innerHTML = '';
+        statusText.textContent = "Đang mở Micro...";
+        
+        mediaStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } 
+        });
+
+        statusText.textContent = "Kết nối Server...";
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${protocol}//${location.host}/ws/stream`);
+
+        ws.onopen = async () => {
+            isRecording = true;
+            btnText.textContent = "Dừng Thu Âm";
+            btnRecord.classList.add('active');
+            statusBadge.className = 'status-badge recording';
+            statusText.textContent = "Đang thu âm & dịch real-time...";
+
+            sendConfig();
+
+            micAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            const source = micAudioCtx.createMediaStreamSource(mediaStream);
+
+            inputAnalyser = micAudioCtx.createAnalyser();
+            inputAnalyser.fftSize = 64;
+            source.connect(inputAnalyser);
+
+            processor = micAudioCtx.createScriptProcessor(512, 1, 1);
+            
+            processor.onaudioprocess = (e) => {
+                if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
+                
+                const inputData = e.inputBuffer.getChannelData(0);
+                
+                let sum = 0;
+                for (let i = 0; i < inputData.length; i++) {
+                    sum += inputData[i] * inputData[i];
+                }
+
+                const rms = Math.sqrt(sum / inputData.length);
+                if (rms < 0.008) {
+                    silenceCounter++;
+                    if (silenceCounter === 2) { 
+                        ws.send(JSON.stringify({ action: "flush" }));
+                    }
+                } else {
+                    silenceCounter = 0;
+                }
+                sendAudioBuffer(inputData);
+            };
+
+            source.connect(processor);
+            processor.connect(micAudioCtx.destination);
+
+            renderVisualizers();
+        };
+
+        ws.onmessage = handleServerMessage;
+
+        ws.onerror = (err) => { 
+            console.warn("Lỗi WebSocket Micro:", err);
+            if (isRecording) statusText.textContent = "Đang xử lý dịch...";
+        };
+
+        ws.onclose = () => { 
+            if (!isRecording) {
+                finishAndCleanupMicro();
+            }
+        };
+
+    } catch (err) {
+        alert("Lỗi Micro: " + err.message);
+        finishAndCleanupMicro();
+    }
+}
+
+function stopRecording() {
+    if (!isRecording) return;
+    
+    isRecording = false;
+    btnText.textContent = "Bắt đầu Thu Âm";
+    btnRecord.classList.remove('active');
+
+    if (processor) { processor.disconnect(); processor = null; }
+    if (micAudioCtx) { micAudioCtx.close(); micAudioCtx = null; }
+    if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        sendSilenceBuffer(1500);
+        ws.send(JSON.stringify({ action: "flush" }));
+        ws.send(JSON.stringify({ action: "finish" }));
+    }
+}
+
+function finishAndCleanupMicro() {
+    isRecording = false;
+    btnText.textContent = "Bắt đầu Thu Âm";
+    btnRecord.classList.remove('active');
+    statusBadge.className = 'status-badge';
+
+    if (ws) { ws.close(); ws = null; }
+}
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) startFileStream(e.target.files[0]);
+});
+
+async function startFileStream(file) {
+    if (isRecording) stopRecording();
+    if (isFileStreaming) stopFileStream(true);
+
+    transcriptHistory.innerHTML = '';
+    statusText.textContent = "Đang giải mã file âm thanh...";
+
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        
+        if (fileAudioCtx) {
+            await fileAudioCtx.close();
+            fileAudioCtx = null;
+        }
+
+        fileAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        const decodedBuffer = await fileAudioCtx.decodeAudioData(arrayBuffer);
+
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${protocol}//${location.host}/ws/stream`);
+
+        ws.onopen = () => {
+            isFileStreaming = true;
+            uploadLabel.style.display = 'none';
+            fileControls.style.display = 'flex';
+            fileName.textContent = `🔊 File đang phát: ${file.name}`;
+            statusBadge.className = 'status-badge file-stream';
+            statusText.textContent = "Đang dịch file real-time...";
+
+            sendConfig();
+
+            fileSourceNode = fileAudioCtx.createBufferSource();
+            fileSourceNode.buffer = decodedBuffer;
+
+            gainNode = fileAudioCtx.createGain();
+            gainNode.gain.value = parseFloat(origVolume.value);
+
+            inputAnalyser = fileAudioCtx.createAnalyser();
+            inputAnalyser.fftSize = 64;
+
+            processor = fileAudioCtx.createScriptProcessor(4096, 1, 1);
+            processor.onaudioprocess = (e) => {
+                if (!isFileStreaming || !ws || ws.readyState !== WebSocket.OPEN) return;
+                
+                const inputData = e.inputBuffer.getChannelData(0);
+
+                let sum = 0;
+                for (let i = 0; i < inputData.length; i++) {
+                    sum += inputData[i] * inputData[i];
+                }
+                const rms = Math.sqrt(sum / inputData.length);
+                if (rms < 0.005) {
+                    silenceCounter++;
+                    if (silenceCounter === 3) {
+                        ws.send(JSON.stringify({ action: "flush" }));
+                    }
+                } else {
+                    silenceCounter = 0;
+                }
+
+                sendAudioBuffer(inputData);
+            };
+
+            fileSourceNode.connect(inputAnalyser);
+            fileSourceNode.connect(processor);
+            processor.connect(fileAudioCtx.destination);
+
+            fileSourceNode.connect(gainNode);
+            gainNode.connect(fileAudioCtx.destination);
+
+            fileSourceNode.onended = () => {
+                if (processor) { processor.disconnect(); processor = null; }
+                
+                sendSilenceBuffer(2000);
+                
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ action: "flush" }));
+                    ws.send(JSON.stringify({ action: "finish" }));
+                }
+                
+                isFileStreaming = false;
+            };
+
+            fileSourceNode.start(0);
+            renderVisualizers();
+        };
+
+        ws.onmessage = handleServerMessage;
+        ws.onerror = () => finishAndCleanupFileStream();
+        ws.onclose = () => { if (isFileStreaming) finishAndCleanupFileStream(); };
+
+    } catch (err) {
+        alert("Lỗi đọc file: " + err.message);
+        finishAndCleanupFileStream();
+    }
+}
+
+setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "ping" }));
+    }
+}, 15000); 
+
+function handleServerMessage(e) {
+    try {
+        const data = JSON.parse(e.data);
+
+        const srcText = data.text || data.original || data.src_text || '';
+        const tgtText = data.translation || data.target_text || '';
+        const srcLangVal = data.source_lang || data.src_lang || srcLang.value;
+        const tgtLangVal = data.target_lang || data.tgt_lang || targetLang.value;
+
+        if (data.type === 'partial') {
+            let pCard = document.getElementById('partialCard');
+            if (!pCard) {
+                pCard = document.createElement('div');
+                pCard.id = 'partialCard';
+                pCard.className = 'res-card';
+                pCard.style.opacity = '0.85';
+                pCard.style.borderColor = '#eab308';
+                transcriptHistory.appendChild(pCard);
+            }
+            pCard.innerHTML = `
+                <div class="res-sub">Đang nói (${srcLangVal}): ${srcText}...</div>
+                ${tgtText ? `<div class="res-text" style="color: #fde047;">Dịch tạm: ${tgtText}</div>` : ''}
+            `;
+            resultContainer.scrollTop = resultContainer.scrollHeight;
+        } 
+        else if (data.type === 'final') {
+            appendResult(srcText, tgtText, srcLangVal, tgtLangVal);
+            
+            if (data.audio_b64 || data.audio) {
+                enqueueAudio(data.audio_b64 || data.audio);
+            }
+        } 
+        else if (data.type === 'finished_all') {
+            if (!isRecording && !isFileStreaming) {
+                uploadLabel.style.display = 'block';
+                fileControls.style.display = 'none';
+                fileInput.value = '';
+            }
+        }
+    } catch (err) {
+        console.error("Lỗi parse JSON hoặc render UI:", err);
+    }
+}
+
+function stopFileStream(force = false) {
+    isFileStreaming = false;
+    if (fileSourceNode) { try { fileSourceNode.stop(); } catch(e){} }
+    if (force) {
+        audioQueue = [];
+        isPlaying = false;
+        finishAndCleanupFileStream();
+    }
+}
+
+function finishAndCleanupFileStream() {
+    isFileStreaming = false;
+    uploadLabel.style.display = 'block';
+    fileControls.style.display = 'none';
+    fileInput.value = '';
+    statusBadge.className = 'status-badge';
+
+    if (fileSourceNode) { try { fileSourceNode.stop(); } catch(e){} fileSourceNode = null; }
+    if (fileAudioCtx) { fileAudioCtx.close(); fileAudioCtx = null; }
+    if (ws) { ws.close(); ws = null; }
+}
+
+function sendAudioBuffer(input32) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    const pcm16 = new Int16Array(input32.length);
+    for (let i = 0; i < input32.length; i++) {
+        let s = Math.max(-1, Math.min(1, input32[i]));
+        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    ws.send(pcm16.buffer);
+}
+
+function renderVisualizers() {
+    if (!isRecording && !isFileStreaming && !isPlaying) return;
+    if (inputAnalyser) {
+        const arrIn = new Uint8Array(inputAnalyser.frequencyBinCount);
+        inputAnalyser.getByteFrequencyData(arrIn);
+        drawBars(ctxInput, canvasInput, arrIn, '#ef4444', '#f87171');
+    }
+    if (outputAnalyser) {
+        const arrOut = new Uint8Array(outputAnalyser.frequencyBinCount);
+        outputAnalyser.getByteFrequencyData(arrOut);
+        drawBars(ctxOutput, canvasOutput, arrOut, '#38bdf8', '#818cf8');
+    }
+    animId = requestAnimationFrame(renderVisualizers);
+}
+
+function drawBars(ctx, canvas, dataArray, colorStart, colorEnd) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const bars = 16, barWidth = (canvas.width / bars) - 4;
+    let x = 2;
+    for (let i = 0; i < bars; i++) {
+        const barHeight = dataArray[i] ? (dataArray[i] / 255) * canvas.height * 0.85 : 4;
+        const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
+        gradient.addColorStop(0, colorStart);
+        gradient.addColorStop(1, colorEnd);
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(x, (canvas.height - barHeight) / 2, barWidth, Math.max(barHeight, 4), 4);
+        ctx.fill();
+        x += barWidth + 4;
+    }
+}
+</script>
+</body>
+<script src="/static/client.js"></script>
+</html>
