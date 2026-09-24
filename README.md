@@ -10,8 +10,10 @@
 
 <b>Researchs:</b> Artificial Intelligence in Education - Mathematics in Deep Learning and Machine Learning<br>
 
-<mark><b><b>Name Project:</b></b> </mark> Multilingual translation with S2ST <br>
 
+<h4 align="center">
+  <mark><b><b>Name Project:</b></b> </mark> Multilingual translation with S2ST <br>
+</h4>
 
 </p>
 <p align="center">
