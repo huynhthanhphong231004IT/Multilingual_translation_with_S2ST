@@ -30,6 +30,8 @@ Youtobe: https://www.youtube.com/@ReoRioll-2304CICTCTU <br>
 </p>
 <br>
 
+Available at your primary URL <mark> https://multilingual-translation-with-s2st.onrender.com </mark>
+
 <p align="center">
   <img src="Images/AnhGiaoDien.png" width="800">
   <br>
