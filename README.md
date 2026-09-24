@@ -36,6 +36,10 @@ Youtobe: https://www.youtube.com/@ReoRioll-2304CICTCTU <br>
   Available at your primary URL <mark> https://multilingual-translation-with-s2st.onrender.com </mark>
 </h4>
 
+```python
+pip install -r requirements.txt && python download_models.py
+```
+
 <p align="center">
   <img src="Images/AnhGiaoDien.png" width="800">
   <br>
